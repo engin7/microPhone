@@ -1,32 +1,57 @@
 //
-//  RecordWhistleViewController.swift
-//  microPhone
+//  AudioRecVC.swift
+//  CloudApper
 //
 //  Created by Engin KUK on 23.08.2021.
+//  Copyright © 2021 M2SYS Technology. All rights reserved.
 //
 
 import UIKit
 import AVFoundation
 
-class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
- 
+class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
+
+    var onSaveRecording: ((URL) -> Void)?
     var stackView: UIStackView!
     var recordButton: UIButton!
+    var recordImageView: UIImageView!
     var playButton: UIButton!
-    var pauseButton: UIButton!
-
-    var recordUrl: URL?
+    var titleLabel: UILabel!
     
-    var recordingSession: AVAudioSession!
-    var whistleRecorder: AVAudioRecorder!
-    var audioPlayer : AVAudioPlayer?
+    var recordUrl: URL?
 
+    var recordingSession: AVAudioSession!
+    var soundRecorder: AVAudioRecorder!
+    var audioPlayer : AVAudioPlayer?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+ 
+        startRecordingSession()
+        
+    }
+    
+    override func loadView() {
+        view = UIView()
 
-        title = "Record your whistle"
-        navigationItem.backBarButtonItem = UIBarButtonItem(title: "Record", style: .plain, target: nil, action: nil)
+        view.backgroundColor = UIColor.lightGray
 
+        stackView = UIStackView()
+        stackView.backgroundColor = .white
+        stackView.spacing = 20
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.distribution = UIStackView.Distribution.fillEqually
+        stackView.alignment = .center
+        stackView.axis = .vertical
+        view.addSubview(stackView)
+
+        stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+    }
+    
+    func startRecordingSession() {
+        
         recordingSession = AVAudioSession.sharedInstance()
 
         do {
@@ -45,27 +70,28 @@ class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate, AV
             self.loadFailUI()
         }
     }
-
+    
     func loadRecordingUI() {
+        titleLabel = UILabel()
+        stackView.addArrangedSubview(titleLabel)
+
+        recordImageView = UIImageView()
+        stackView.addArrangedSubview(recordImageView)
+
         recordButton = UIButton()
-        recordButton.translatesAutoresizingMaskIntoConstraints = false
-        recordButton.setTitle("Tap to Record", for: .normal)
-        recordButton.titleLabel?.font = UIFont.preferredFont(forTextStyle: .title1)
+        recordButton.setTitle("Done", for: .normal)
+        recordButton.setTitleColor(.black, for: .normal)
         recordButton.addTarget(self, action: #selector(recordTapped), for: .touchUpInside)
         stackView.addArrangedSubview(recordButton)
         
         playButton = UIButton()
-        playButton.setTitle("Play", for: .normal)
-        playButton.addTarget(self, action: #selector(playTapped), for: .touchUpInside)
-        playButton.isHidden = true
+        playButton.setTitle("Pause", for: .normal)
+        playButton.setTitleColor(.black, for: .normal)
         stackView.addArrangedSubview(playButton)
         
-        pauseButton = UIButton()
-        pauseButton.setTitle("Pause", for: .normal)
-        pauseButton.addTarget(self, action: #selector(pauseTapped), for: .touchUpInside)
-
+        startRecording()
     }
-
+    
     func loadFailUI() {
         let failLabel = UILabel()
         failLabel.font = UIFont.preferredFont(forTextStyle: .headline)
@@ -74,49 +100,39 @@ class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate, AV
 
         stackView.addArrangedSubview(failLabel)
     }
- 
-    
-    override func loadView() {
-        view = UIView()
 
-        view.backgroundColor = UIColor.gray
-
-        stackView = UIStackView()
-        stackView.spacing = 30
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.distribution = UIStackView.Distribution.fillEqually
-        stackView.alignment = .center
-        stackView.axis = .vertical
-        view.addSubview(stackView)
-
-        stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
+    @objc func recordTapped() {
+        if soundRecorder == nil {
+            startRecording()
+        } else {
+            finishRecording(success: true)
+        }
     }
     
-    // returns the path to a writeable directory owned by your app
-    class func getDocumentsDirectory() -> URL {
-        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        let documentsDirectory = paths[0]
-        return documentsDirectory
-    }
-
-    class func getWhistleURL() -> URL {
-        return getDocumentsDirectory().appendingPathComponent("whistle.m4a")
+    
+    @objc func pauseTapped() {
+        if soundRecorder.isRecording {
+            titleLabel.text = "Recording is on pause now"
+            playButton.setTitle("Continue", for: .normal)
+            soundRecorder.pause()
+        } else {
+            titleLabel.text = "We are recording now"
+            playButton.setTitle("Pause", for: .normal)
+            soundRecorder.record()
+        }
     }
     
     func startRecording() {
-        stackView.addArrangedSubview(pauseButton)
+        titleLabel.text = "We are recording now"
+        recordImageView.image = #imageLiteral(resourceName: "recording")
 
-        // 1
-        view.backgroundColor = UIColor(red: 0.6, green: 0, blue: 0, alpha: 1)
-
-        // 2
-        recordButton.setTitle("tap to stop", for: .normal)
-
+        recordButton.setTitle("Done", for: .normal)
+        playButton.setTitle("Pause", for: .normal)
+        playButton.removeTarget(nil, action: nil, for: .allEvents)
+        playButton.addTarget(self, action: #selector(pauseTapped), for: .touchUpInside)
 
         // 3 Use the getWhistleURL() method we just wrote to find where to save the whistle.
-        let audioURL = RecordWhistleViewController.getWhistleURL()
+        let audioURL = AudioRecVC.getSoundURL()
         print(audioURL.absoluteString)
 
         // 4 Create a settings dictionary describing the format, sample rate, channels and quality.
@@ -130,27 +146,29 @@ class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate, AV
 
         do {
             // 5 Create an AVAudioRecorder object pointing at our whistle URL, set ourselves as the delegate, then call its record() method.
-
-            whistleRecorder = try AVAudioRecorder(url: audioURL, settings: settings)
-            whistleRecorder.delegate = self
-            whistleRecorder.record()
+            soundRecorder = try AVAudioRecorder(url: audioURL, settings: settings)
+            soundRecorder.delegate = self
+            soundRecorder.record()
         } catch {
             finishRecording(success: false)
-            stackView.removeArrangedSubview(pauseButton)
         }
     }
     
     func finishRecording(success: Bool) {
-        view.backgroundColor = UIColor(red: 0, green: 0.6, blue: 0, alpha: 1)
-        whistleRecorder.stop()
-        recordUrl = whistleRecorder.url
-        whistleRecorder = nil
-        stackView.removeArrangedSubview(pauseButton)
-        pauseButton.removeFromSuperview()
+
+        soundRecorder.stop()
+        recordUrl = soundRecorder.url
+        soundRecorder = nil
+        playButton.setTitle("Play", for: .normal)
+
         if success {
             recordButton.setTitle("Tap to Re-record", for: .normal)
-            playButton.isHidden = false
-            navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Next", style: .plain, target: self, action: #selector(nextTapped))
+            titleLabel.text = "You can play your record"
+            playButton.setTitle("Play", for: .normal)
+            recordImageView.image = #imageLiteral(resourceName: "sound")
+            playButton.removeTarget(nil, action: nil, for: .allEvents)
+            playButton.addTarget(self, action: #selector(playTapped), for: .touchUpInside)
+
         } else {
             recordButton.setTitle("Tap to Record", for: .normal)
 
@@ -160,23 +178,25 @@ class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate, AV
         }
     }
     
-    @objc func nextTapped() {
-
-    }
-    
-    @objc func pauseTapped() {
-        if whistleRecorder.isRecording {
-            pauseButton.setTitle("Continue", for: .normal)
-            whistleRecorder.pause()
+    @objc func pausePlayTapped() {
+        guard let ap = audioPlayer else { return }
+        if ap.isPlaying {
+            audioPlayer?.stop()
+            titleLabel.text = "Playing paused"
+            playButton.setTitle("Play", for: .normal)
         } else {
-            pauseButton.setTitle("Pause", for: .normal)
-            whistleRecorder.record()
+            audioPlayer?.play()
+            titleLabel.text = "Playing record"
+            playButton.setTitle("Pause Playing", for: .normal)
         }
     }
-  
+    
     @objc func playTapped() {
         audioPlayer?.delegate = self
-        playButton.isHidden = true
+        titleLabel.text = "Playing record"
+        playButton.removeTarget(nil, action: nil, for: .allEvents)
+        playButton.addTarget(self, action: #selector(pausePlayTapped), for: .touchUpInside)
+        playButton.setTitle("Pause Playing", for: .normal)
         if let url = recordUrl {
             do {
                 let player = try AVAudioPlayer(contentsOf: url)
@@ -188,20 +208,22 @@ class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate, AV
         }
     }
     
-    @objc func recordTapped() {
-        if whistleRecorder == nil {
-            startRecording()
-        } else {
-            finishRecording(success: true)
-        }
-    }
-    
     func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
         if !flag {
             finishRecording(success: false)
         }
     }
     
-    
-}
+    // returns the path to a writeable directory owned by your app
+    class func getDocumentsDirectory() -> URL {
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        let documentsDirectory = paths[0]
+        return documentsDirectory
+    }
 
+    class func getSoundURL() -> URL {
+        return getDocumentsDirectory().appendingPathComponent("recording.m4a")
+    }
+ 
+ 
+}

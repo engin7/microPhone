@@ -18,7 +18,7 @@ class ViewController: UIViewController {
     }
 
     @objc func addWhistle() {
-        let vc = RecordWhistleViewController()
+        let vc = AudioRecVC()
         navigationController?.pushViewController(vc, animated: true)
     }
     
