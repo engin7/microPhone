@@ -13,6 +13,7 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
 
     var onSaveRecording: ((URL) -> Void)?
     var stackView: UIStackView!
+    var horizontalSV: UIStackView!
     var recordButton: UIButton!
     var recordImageView: UIImageView!
     var playButton: UIButton!
@@ -78,16 +79,25 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         recordImageView = UIImageView()
         stackView.addArrangedSubview(recordImageView)
 
+        horizontalSV = UIStackView()
+        horizontalSV.backgroundColor = .white
+        horizontalSV.spacing = 20
+        horizontalSV.translatesAutoresizingMaskIntoConstraints = false
+        horizontalSV.distribution = UIStackView.Distribution.fillEqually
+        horizontalSV.alignment = .center
+        horizontalSV.axis = .horizontal
+        stackView.addArrangedSubview(horizontalSV)
+ 
         recordButton = UIButton()
         recordButton.setTitle("Done", for: .normal)
         recordButton.setTitleColor(.black, for: .normal)
         recordButton.addTarget(self, action: #selector(recordTapped), for: .touchUpInside)
-        stackView.addArrangedSubview(recordButton)
+        horizontalSV.addArrangedSubview(recordButton)
         
         playButton = UIButton()
         playButton.setTitle("Pause", for: .normal)
         playButton.setTitleColor(.black, for: .normal)
-        stackView.addArrangedSubview(playButton)
+        horizontalSV.addArrangedSubview(playButton)
         
         startRecording()
     }
@@ -162,7 +172,7 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         playButton.setTitle("Play", for: .normal)
 
         if success {
-            recordButton.setTitle("Tap to Re-record", for: .normal)
+            recordButton.setTitle("Re-record", for: .normal)
             titleLabel.text = "You can play your record"
             playButton.setTitle("Play", for: .normal)
             recordImageView.image = #imageLiteral(resourceName: "sound")
