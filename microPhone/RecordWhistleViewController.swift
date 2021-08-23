@@ -8,14 +8,19 @@
 import UIKit
 import AVFoundation
 
-class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate {
+class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
  
     var stackView: UIStackView!
     var recordButton: UIButton!
+    var playButton: UIButton!
+    var pauseButton: UIButton!
 
+    var recordUrl: URL?
+    
     var recordingSession: AVAudioSession!
     var whistleRecorder: AVAudioRecorder!
-    
+    var audioPlayer : AVAudioPlayer?
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -48,6 +53,17 @@ class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate {
         recordButton.titleLabel?.font = UIFont.preferredFont(forTextStyle: .title1)
         recordButton.addTarget(self, action: #selector(recordTapped), for: .touchUpInside)
         stackView.addArrangedSubview(recordButton)
+        
+        playButton = UIButton()
+        playButton.setTitle("Play", for: .normal)
+        playButton.addTarget(self, action: #selector(playTapped), for: .touchUpInside)
+        playButton.isHidden = true
+        stackView.addArrangedSubview(playButton)
+        
+        pauseButton = UIButton()
+        pauseButton.setTitle("Pause", for: .normal)
+        pauseButton.addTarget(self, action: #selector(pauseTapped), for: .touchUpInside)
+
     }
 
     func loadFailUI() {
@@ -90,11 +106,14 @@ class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate {
     }
     
     func startRecording() {
+        stackView.addArrangedSubview(pauseButton)
+
         // 1
         view.backgroundColor = UIColor(red: 0.6, green: 0, blue: 0, alpha: 1)
 
         // 2
-        recordButton.setTitle("Tap to Stop", for: .normal)
+        recordButton.setTitle("tap to stop", for: .normal)
+
 
         // 3 Use the getWhistleURL() method we just wrote to find where to save the whistle.
         let audioURL = RecordWhistleViewController.getWhistleURL()
@@ -117,17 +136,20 @@ class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate {
             whistleRecorder.record()
         } catch {
             finishRecording(success: false)
+            stackView.removeArrangedSubview(pauseButton)
         }
     }
     
     func finishRecording(success: Bool) {
         view.backgroundColor = UIColor(red: 0, green: 0.6, blue: 0, alpha: 1)
-
         whistleRecorder.stop()
+        recordUrl = whistleRecorder.url
         whistleRecorder = nil
-
+        stackView.removeArrangedSubview(pauseButton)
+        pauseButton.removeFromSuperview()
         if success {
             recordButton.setTitle("Tap to Re-record", for: .normal)
+            playButton.isHidden = false
             navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Next", style: .plain, target: self, action: #selector(nextTapped))
         } else {
             recordButton.setTitle("Tap to Record", for: .normal)
@@ -140,6 +162,30 @@ class RecordWhistleViewController: UIViewController, AVAudioRecorderDelegate {
     
     @objc func nextTapped() {
 
+    }
+    
+    @objc func pauseTapped() {
+        if whistleRecorder.isRecording {
+            pauseButton.setTitle("Continue", for: .normal)
+            whistleRecorder.pause()
+        } else {
+            pauseButton.setTitle("Pause", for: .normal)
+            whistleRecorder.record()
+        }
+    }
+  
+    @objc func playTapped() {
+        audioPlayer?.delegate = self
+        playButton.isHidden = true
+        if let url = recordUrl {
+            do {
+                let player = try AVAudioPlayer(contentsOf: url)
+                 audioPlayer = player
+                 audioPlayer?.play()
+             } catch {
+                 print("audioPlayer error: \(error.localizedDescription)")
+             }
+        }
     }
     
     @objc func recordTapped() {
