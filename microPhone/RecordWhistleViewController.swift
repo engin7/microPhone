@@ -49,6 +49,7 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
         stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        stackView.heightAnchor.constraint(equalToConstant: UIScreen.main.bounds.height/3).isActive = true
     }
     
     func startRecordingSession() {
@@ -88,16 +89,23 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         horizontalSV.axis = .horizontal
         stackView.addArrangedSubview(horizontalSV)
  
+        playButton = UIButton()
+        horizontalSV.addArrangedSubview(playButton)
+        playButton.layer.shadowColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.25).cgColor
+        playButton.layer.shadowOffset = CGSize(width: 0.0, height: 2.0)
+        playButton.layer.shadowOpacity = 1.0
+        playButton.layer.shadowRadius = 0.0
+        playButton.layer.masksToBounds = false
+        playButton.layer.cornerRadius = 24.0
+
         recordButton = UIButton()
-        recordButton.setTitle("Done", for: .normal)
-        recordButton.setTitleColor(.black, for: .normal)
+        recordButton.setImage(#imageLiteral(resourceName: "check"), for: .normal)
         recordButton.addTarget(self, action: #selector(recordTapped), for: .touchUpInside)
         horizontalSV.addArrangedSubview(recordButton)
-        
-        playButton = UIButton()
-        playButton.setTitle("Pause", for: .normal)
-        playButton.setTitleColor(.black, for: .normal)
-        horizontalSV.addArrangedSubview(playButton)
+         
+        let gapView = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 20))
+        gapView.backgroundColor = .white
+        stackView.addArrangedSubview(gapView)
         
         startRecording()
     }
@@ -123,11 +131,11 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
     @objc func pauseTapped() {
         if soundRecorder.isRecording {
             titleLabel.text = "Recording is on pause now"
-            playButton.setTitle("Continue", for: .normal)
+            playButton.setImage(#imageLiteral(resourceName: "rec"), for: .normal)
             soundRecorder.pause()
         } else {
             titleLabel.text = "We are recording now"
-            playButton.setTitle("Pause", for: .normal)
+            playButton.setImage(#imageLiteral(resourceName: "pause"), for: .normal)
             soundRecorder.record()
         }
     }
@@ -136,8 +144,8 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         titleLabel.text = "We are recording now"
         recordImageView.image = #imageLiteral(resourceName: "recording")
 
-        recordButton.setTitle("Done", for: .normal)
-        playButton.setTitle("Pause", for: .normal)
+        recordButton.setImage(#imageLiteral(resourceName: "check"), for: .normal)
+        playButton.setImage(#imageLiteral(resourceName: "pause"), for: .normal)
         playButton.removeTarget(nil, action: nil, for: .allEvents)
         playButton.addTarget(self, action: #selector(pauseTapped), for: .touchUpInside)
 
@@ -169,18 +177,18 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         soundRecorder.stop()
         recordUrl = soundRecorder.url
         soundRecorder = nil
-        playButton.setTitle("Play", for: .normal)
+        playButton.setImage(#imageLiteral(resourceName: "play"), for: .normal)
 
         if success {
-            recordButton.setTitle("Re-record", for: .normal)
+            recordButton.setImage(#imageLiteral(resourceName: "replay"), for: .normal)
             titleLabel.text = "You can play your record"
-            playButton.setTitle("Play", for: .normal)
+            playButton.setImage(#imageLiteral(resourceName: "play"), for: .normal)
             recordImageView.image = #imageLiteral(resourceName: "sound")
             playButton.removeTarget(nil, action: nil, for: .allEvents)
             playButton.addTarget(self, action: #selector(playTapped), for: .touchUpInside)
 
         } else {
-            recordButton.setTitle("Tap to Record", for: .normal)
+            recordButton.setImage(#imageLiteral(resourceName: "replay"), for: .normal)
 
             let ac = UIAlertController(title: "Record failed", message: "There was a problem recording your whistle; please try again.", preferredStyle: .alert)
             ac.addAction(UIAlertAction(title: "OK", style: .default))
@@ -193,11 +201,11 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         if ap.isPlaying {
             audioPlayer?.stop()
             titleLabel.text = "Playing paused"
-            playButton.setTitle("Play", for: .normal)
+            playButton.setImage(#imageLiteral(resourceName: "play"), for: .normal)
         } else {
             audioPlayer?.play()
             titleLabel.text = "Playing record"
-            playButton.setTitle("Pause Playing", for: .normal)
+            playButton.setImage(#imageLiteral(resourceName: "pause"), for: .normal)
         }
     }
     
@@ -206,7 +214,7 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         titleLabel.text = "Playing record"
         playButton.removeTarget(nil, action: nil, for: .allEvents)
         playButton.addTarget(self, action: #selector(pausePlayTapped), for: .touchUpInside)
-        playButton.setTitle("Pause Playing", for: .normal)
+        playButton.setImage(#imageLiteral(resourceName: "pause"), for: .normal)
         if let url = recordUrl {
             do {
                 let player = try AVAudioPlayer(contentsOf: url)
