@@ -14,8 +14,11 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
     var onSaveRecording: ((URL) -> Void)?
     var stackView: UIStackView!
     var horizontalSV: UIStackView!
+
     var recordButton: UIButton!
     var recordImageView: UIImageView!
+    var seekBar: UISlider!
+    
     var playButton: UIButton!
     var titleLabel: UILabel!
     
@@ -77,9 +80,22 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         titleLabel = UILabel()
         stackView.addArrangedSubview(titleLabel)
 
+        let imageContainer = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 80))
+        imageContainer.backgroundColor = .red
+        imageContainer.translatesAutoresizingMaskIntoConstraints = false
+        stackView.addArrangedSubview(imageContainer)
+        
         recordImageView = UIImageView()
-        stackView.addArrangedSubview(recordImageView)
-
+        imageContainer.addSubview(recordImageView)
+        recordImageView.center = imageContainer.center
+        
+        seekBar = UISlider(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 40))
+        seekBar.minimumValue = 0
+        seekBar.maximumValue = 12
+        imageContainer.addSubview(seekBar)
+        seekBar.center = imageContainer.center
+        seekBar.isHidden = true
+        
         horizontalSV = UIStackView()
         horizontalSV.backgroundColor = .white
         horizontalSV.spacing = 20
@@ -172,6 +188,12 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         }
     }
     
+    func showSeekBar() {
+        
+        seekBar.isHidden = false
+        recordImageView.isHidden = true
+    }
+    
     func finishRecording(success: Bool) {
 
         soundRecorder.stop()
@@ -183,7 +205,9 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
             recordButton.setImage(#imageLiteral(resourceName: "replay"), for: .normal)
             titleLabel.text = "You can play your record"
             playButton.setImage(#imageLiteral(resourceName: "play"), for: .normal)
-            recordImageView.image = #imageLiteral(resourceName: "sound")
+            
+            showSeekBar()
+
             playButton.removeTarget(nil, action: nil, for: .allEvents)
             playButton.addTarget(self, action: #selector(playTapped), for: .touchUpInside)
 
