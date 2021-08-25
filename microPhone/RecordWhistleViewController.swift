@@ -78,8 +78,14 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
     
     func loadRecordingUI() {
         titleLabel = UILabel()
+        titleLabel.font = titleLabel.font.withSize(22)
         stackView.addArrangedSubview(titleLabel)
- 
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: stackView.topAnchor, constant: 40),
+        ])
+        
         recordImageView = UIImageView()
         stackView.addArrangedSubview(recordImageView)
   
@@ -88,7 +94,7 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         stackView.addArrangedSubview(seekBar)
 
         NSLayoutConstraint.activate([
-            seekBar.widthAnchor.constraint(equalTo: stackView.widthAnchor, multiplier: 0.5),
+            seekBar.widthAnchor.constraint(equalTo: stackView.widthAnchor, multiplier: 0.6),
             seekBar.heightAnchor.constraint(equalToConstant: 40),
         ])
         seekBar.isHidden = true
@@ -98,7 +104,7 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         
         horizontalSV = UIStackView()
         horizontalSV.backgroundColor = .white
-        horizontalSV.spacing = 20
+        horizontalSV.spacing = 40
         horizontalSV.translatesAutoresizingMaskIntoConstraints = false
         horizontalSV.distribution = UIStackView.Distribution.fillEqually
         horizontalSV.alignment = .center
@@ -138,6 +144,8 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
     @objc func recordTapped() {
         if soundRecorder == nil {
             startRecording()
+            seekBar.isHidden = true
+            recordImageView.isHidden = false
         } else {
             finishRecording(success: true)
         }
@@ -228,16 +236,22 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
             playButton.setImage(#imageLiteral(resourceName: "play"), for: .normal)
         } else {
             audioPlayer?.play()
+            timer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(updateSlider), userInfo: nil, repeats: true)
             titleLabel.text = "Playing record"
             playButton.setImage(#imageLiteral(resourceName: "pause"), for: .normal)
         }
     }
     
+    var timer: Timer?
+    
     @objc func  updateSlider() {
         let progress = Float(audioPlayer!.currentTime)
         
-        if seekBar.maximumValue - progress < 1 {
+        if seekBar.maximumValue - progress < 0.25 {
             seekBar.setValue(seekBar.maximumValue, animated: false)
+            timer?.invalidate()
+            titleLabel.text = "End of recording"
+            playButton.setImage(#imageLiteral(resourceName: "play"), for: .normal)
         } else {
             seekBar.setValue(progress, animated: false)
         }
@@ -254,7 +268,7 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
             do {
                 let player = try AVAudioPlayer(contentsOf: url)
                  seekBar.maximumValue = Float(player.duration)
-                _ = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateSlider), userInfo: nil, repeats: true)
+                timer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(updateSlider), userInfo: nil, repeats: true)
                 audioPlayer = player
                  audioPlayer?.play()
              } catch {
