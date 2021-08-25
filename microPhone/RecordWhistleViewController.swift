@@ -79,22 +79,22 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
     func loadRecordingUI() {
         titleLabel = UILabel()
         stackView.addArrangedSubview(titleLabel)
-
-        let imageContainer = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 80))
-        imageContainer.backgroundColor = .red
-        imageContainer.translatesAutoresizingMaskIntoConstraints = false
-        stackView.addArrangedSubview(imageContainer)
-        
+ 
         recordImageView = UIImageView()
-        imageContainer.addSubview(recordImageView)
-        recordImageView.center = imageContainer.center
-        
-        seekBar = UISlider(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 40))
-        seekBar.minimumValue = 0
-        seekBar.maximumValue = 12
-        imageContainer.addSubview(seekBar)
-        seekBar.center = imageContainer.center
+        stackView.addArrangedSubview(recordImageView)
+  
+        seekBar = UISlider()
+        seekBar.translatesAutoresizingMaskIntoConstraints = false
+        stackView.addArrangedSubview(seekBar)
+
+        NSLayoutConstraint.activate([
+            seekBar.widthAnchor.constraint(equalTo: stackView.widthAnchor, multiplier: 0.5),
+            seekBar.heightAnchor.constraint(equalToConstant: 40),
+        ])
         seekBar.isHidden = true
+        seekBar.isUserInteractionEnabled = false
+        seekBar.minimumValue = 0
+        seekBar.maximumValue = 100
         
         horizontalSV = UIStackView()
         horizontalSV.backgroundColor = .white
@@ -233,16 +233,29 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         }
     }
     
+    @objc func  updateSlider() {
+        let progress = Float(audioPlayer!.currentTime)
+        
+        if seekBar.maximumValue - progress < 1 {
+            seekBar.setValue(seekBar.maximumValue, animated: false)
+        } else {
+            seekBar.setValue(progress, animated: false)
+        }
+    }
+    
     @objc func playTapped() {
         audioPlayer?.delegate = self
         titleLabel.text = "Playing record"
         playButton.removeTarget(nil, action: nil, for: .allEvents)
         playButton.addTarget(self, action: #selector(pausePlayTapped), for: .touchUpInside)
         playButton.setImage(#imageLiteral(resourceName: "pause"), for: .normal)
+         
         if let url = recordUrl {
             do {
                 let player = try AVAudioPlayer(contentsOf: url)
-                 audioPlayer = player
+                 seekBar.maximumValue = Float(player.duration)
+                _ = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateSlider), userInfo: nil, repeats: true)
+                audioPlayer = player
                  audioPlayer?.play()
              } catch {
                  print("audioPlayer error: \(error.localizedDescription)")
