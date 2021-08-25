@@ -90,18 +90,20 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
     func loadRecordingUI() {
         titleLabel = UILabel()
         titleLabel.font = titleLabel.font.withSize(22)
+        titleLabel.textColor = .black
         stackView.addArrangedSubview(titleLabel)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: stackView.topAnchor, constant: 50),
+            titleLabel.topAnchor.constraint(equalTo: stackView.topAnchor, constant: 30),
         ])
         
         recordImageView = UIImageView()
+        recordImageView.contentMode = .scaleToFill
         stackView.addArrangedSubview(recordImageView)
         recordImageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            recordImageView.widthAnchor.constraint(equalTo: stackView.widthAnchor, multiplier: 0.6),
+            recordImageView.widthAnchor.constraint(equalTo: stackView.widthAnchor, multiplier: 0.8),
             recordImageView.heightAnchor.constraint(equalToConstant: 150),
         ])
         
@@ -259,6 +261,7 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
     func finishRecording(success: Bool) {
         
         soundRecorder.stop()
+        seekBar.setValue(seekBar.minimumValue, animated: false)
         recordUrl = soundRecorder.url
         soundRecorder = nil
         playButton.setImage(#imageLiteral(resourceName: "play"), for: .normal)
@@ -302,10 +305,11 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
         let progress = Float(audioPlayer!.currentTime)
         
         if seekBar.maximumValue - progress < 0.25 {
-            seekBar.setValue(seekBar.maximumValue, animated: false)
             timer?.invalidate()
+            seekBar.setValue(seekBar.maximumValue, animated: false)
             titleLabel.text = "End of record"
             playButton.setImage(#imageLiteral(resourceName: "play"), for: .normal)
+            return
         } else {
             seekBar.setValue(progress, animated: false)
         }
