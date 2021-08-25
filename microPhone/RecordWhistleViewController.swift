@@ -259,7 +259,7 @@ class AudioRecVC: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelega
     }
     
     func finishRecording(success: Bool) {
-        
+        timer?.invalidate()
         soundRecorder.stop()
         seekBar.setValue(seekBar.minimumValue, animated: false)
         recordUrl = soundRecorder.url
